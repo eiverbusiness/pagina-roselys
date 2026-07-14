@@ -1,0 +1,334 @@
+/* ============================================================
+   Roselys birthday site — styles
+   Plain CSS, no build step. Works on file:// and static serve.
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --pink: #ff7eb3;
+  --pink-deep: #ff4f88;
+  --cream: #fff7fb;
+  --gold: #ffd166;
+  --ink: #5a2a44;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden; /* no horizontal scroll on mobile */
+}
+
+body {
+  min-height: 100vh;
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 209, 102, 0.35), transparent 40%),
+    radial-gradient(circle at 80% 25%, rgba(126, 217, 255, 0.30), transparent 45%),
+    linear-gradient(160deg, #ffe3ef 0%, #fff7fb 45%, #e8f6ff 100%);
+  background-attachment: fixed;
+}
+
+/* ============================================================
+   ENTRANCE — falling, assembling cake
+   ============================================================ */
+.entrance {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: clamp(1.5rem, 6vw, 4rem) 1rem 2rem;
+  text-align: center;
+}
+
+.cake {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: clamp(1.5rem, 5vw, 3rem);
+}
+
+/* Each tier drops from above the viewport and bounces into place.
+   The overshoot cubic-bezier gives the "settle" bounce. */
+.tier {
+  border-radius: 12px 12px 6px 6px;
+  opacity: 0; /* hidden until .playing triggers the animation */
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.08), 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+.tier-top {
+  width: clamp(80px, 22vw, 130px);
+  height: clamp(34px, 9vw, 54px);
+  background: linear-gradient(180deg, #ffd9ec, #ff9ec9);
+  z-index: 3;
+}
+
+.tier-mid {
+  width: clamp(120px, 32vw, 190px);
+  height: clamp(42px, 11vw, 64px);
+  background: linear-gradient(180deg, #ffc1e3, #ff7eb3);
+  margin-top: -6px;
+  z-index: 2;
+}
+
+.tier-bottom {
+  width: clamp(160px, 44vw, 260px);
+  height: clamp(52px, 14vw, 80px);
+  background: linear-gradient(180deg, #ffb0d6, #ff4f88);
+  margin-top: -6px;
+  z-index: 1;
+}
+
+.plate {
+  width: clamp(190px, 52vw, 300px);
+  height: clamp(14px, 4vw, 20px);
+  margin-top: -2px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffffff, #e7e7ef);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+}
+
+/* Candles sit on the top tier */
+.candles {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: clamp(8px, 3vw, 18px);
+  opacity: 0;
+}
+
+.candle {
+  position: relative;
+  width: 8px;
+  height: 30px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    45deg,
+    #7ed9ff,
+    #7ed9ff 4px,
+    #ffffff 4px,
+    #ffffff 8px
+  );
+}
+
+.flame {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 10px;
+  height: 16px;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: radial-gradient(circle at 50% 70%, #fff3b0, #ff9f1c 60%, #ff5400);
+  filter: drop-shadow(0 0 6px rgba(255, 159, 28, 0.8));
+  animation: flicker 0.9s infinite alternate ease-in-out;
+}
+
+/* Headline fades + scales in AFTER the cake settles */
+.headline {
+  font-size: clamp(1.6rem, 7vw, 3.4rem);
+  line-height: 1.15;
+  margin: 0;
+  padding: 0 0.5rem;
+  color: var(--pink-deep);
+  text-shadow: 0 2px 0 #fff, 0 6px 16px rgba(255, 79, 136, 0.25);
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+/* ---- animation states, toggled by adding .playing on <body> ---- */
+body.playing .tier-top {
+  animation: dropIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+body.playing .tier-mid {
+  animation: dropIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s both;
+}
+body.playing .tier-bottom {
+  animation: dropIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;
+}
+body.playing .plate {
+  animation: dropIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.82s both;
+}
+body.playing .candles {
+  animation: dropIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 1.0s both;
+}
+body.playing .headline {
+  animation: headlineIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 1.55s both;
+}
+
+@keyframes dropIn {
+  0% {
+    transform: translateY(-120vh);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes headlineIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes flicker {
+  0% {
+    transform: translateX(-50%) scale(1) rotate(-2deg);
+  }
+  100% {
+    transform: translateX(-50%) scale(1.15) rotate(2deg);
+  }
+}
+
+/* ============================================================
+   PHOTO BOOTH — vintage polaroid printer
+   ============================================================ */
+.booth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(1rem, 4vw, 2.5rem) 1rem 4rem;
+}
+
+.machine {
+  margin-bottom: clamp(1.5rem, 5vw, 2.5rem);
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.25));
+}
+
+.machine-body {
+  width: clamp(220px, 70vw, 360px);
+  padding: 1rem;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #6d4b7a, #43284f);
+  border: 4px solid #2c1833;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.machine-screen {
+  width: 100%;
+  text-align: center;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: #ffe6a7;
+  background: #1c0f24;
+  border-radius: 8px;
+  padding: 0.5rem;
+  font-size: clamp(0.8rem, 3vw, 1rem);
+  text-shadow: 0 0 8px rgba(255, 209, 102, 0.7);
+}
+
+.slot {
+  width: 70%;
+  height: 14px;
+  border-radius: 8px;
+  background: #120a18;
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.8);
+}
+
+/* Perspective container so cards can travel in Z space */
+.photo-grid {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(150px, 42vw, 220px), 1fr));
+  gap: clamp(0.8rem, 3vw, 1.5rem);
+  perspective: 1200px;
+}
+
+.photo-card {
+  background: var(--cream);
+  padding: 10px 10px 0;
+  border-radius: 4px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+  transform-style: preserve-3d;
+  /* initial far/small state before printing */
+  opacity: 0;
+}
+
+.photo-card.show {
+  animation: printPhoto 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.photo-card img {
+  display: block;
+  width: 100%;
+  height: clamp(150px, 40vw, 220px);
+  object-fit: cover;
+  border-radius: 2px;
+  background: #eee;
+}
+
+.photo-card .caption {
+  margin: 8px 4px 12px;
+  font-size: clamp(0.8rem, 3.2vw, 0.95rem);
+  text-align: center;
+  color: var(--ink);
+  font-family: "Comic Sans MS", "Trebuchet MS", cursive, sans-serif;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+@keyframes printPhoto {
+  0% {
+    opacity: 0;
+    transform: translateZ(-500px) scale(0.4);
+  }
+  100% {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — phone portrait (~375px) and up
+   ============================================================ */
+@media (max-width: 480px) {
+  .entrance {
+    padding-top: 2.5rem;
+  }
+  .photo-grid {
+    grid-template-columns: 1fr;
+    gap: 1.1rem;
+  }
+  .photo-card img {
+    height: 60vw;
+  }
+}
+
+/* Respect users who prefer less motion: show final state instantly */
+@media (prefers-reduced-motion: reduce) {
+  .tier,
+  .plate,
+  .candles,
+  .headline,
+  .photo-card {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+}
