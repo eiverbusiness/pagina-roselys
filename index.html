@@ -7,11 +7,15 @@
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
+  <button id="theme-toggle" class="theme-toggle" type="button"
+          aria-label="Cambiar a tema claro" aria-pressed="false">🌙</button>
+
   <!-- ============ ENTRANCE: falling birthday cake ============ -->
   <section id="entrance" class="entrance" aria-hidden="false">
     <div class="cake" id="cake">
       <!-- top tier -->
       <div class="tier tier-top">
+        <span class="cherry"></span>
         <div class="candles">
           <div class="candle"><span class="flame"></span></div>
           <div class="candle"><span class="flame"></span></div>
@@ -26,7 +30,7 @@
       <div class="plate"></div>
     </div>
 
-    <h1 id="headline" class="headline">Feliz cumpleaños mi querida Roselys</h1>
+    <h1 id="headline" class="headline">Feliz cumpleaños Roselys!</h1>
   </section>
 
   <!-- ============ PHOTO BOOTH ============ -->
@@ -37,7 +41,9 @@
         <div class="slot"></div>
       </div>
     </div>
-    <div id="photo-grid" class="photo-grid" role="list"></div>
+    <div class="printer-window" aria-label="Tira de fotos">
+      <div id="strip" class="strip" role="list"></div>
+    </div>
   </section>
 
   <!-- Load order matters: data (photos.js) BEFORE logic (main.js) -->

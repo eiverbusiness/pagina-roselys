@@ -1,6 +1,11 @@
 /* ============================================================
    Roselys birthday site — styles
    Plain CSS, no build step. Works on file:// and static serve.
+
+   THEME MODEL:
+   - :root holds the DARK theme (the default, pretty + glowing).
+   - body.light restores the original light palette.
+   - All colors flow through CSS variables so the toggle is cheap.
    ============================================================ */
 
 *,
@@ -10,11 +15,49 @@
 }
 
 :root {
+  /* --- DARK THEME (default) --- */
   --pink: #ff7eb3;
   --pink-deep: #ff4f88;
-  --cream: #fff7fb;
   --gold: #ffd166;
+
+  /* Frame/caption colors re-tinted for the dark base */
+  --cream: #1b1430;
+  --ink: #f4ecff;
+
+  /* Headline: light ink with a colored glow (reads well on dark) */
+  --headline-color: #ffd9ec;
+  --headline-shadow:
+    0 2px 18px rgba(255, 79, 136, 0.55),
+    0 0 42px rgba(160, 107, 255, 0.35);
+
+  /* Deep near-black/navy base with several large soft radial glows
+     in pink, purple and cyan. Dark base, glowing accents. */
+  --page-bg:
+    radial-gradient(circle at 16% 12%, rgba(255, 79, 136, 0.30), transparent 42%),
+    radial-gradient(circle at 82% 16%, rgba(160, 107, 255, 0.30), transparent 46%),
+    radial-gradient(circle at 72% 82%, rgba(79, 216, 255, 0.22), transparent 46%),
+    radial-gradient(circle at 24% 86%, rgba(255, 79, 136, 0.18), transparent 42%),
+    linear-gradient(160deg, #0a0a14 0%, #0b0a1a 50%, #0a0a16 100%);
+
+  /* Toggle button surface (dark) */
+  --toggle-bg: rgba(20, 16, 40, 0.55);
+  --toggle-fg: #ffd9ec;
+  --toggle-border: rgba(255, 255, 255, 0.25);
+}
+
+/* --- LIGHT THEME: restore the original palette --- */
+body.light {
+  --cream: #fff7fb;
   --ink: #5a2a44;
+  --headline-color: #ff4f88;
+  --headline-shadow: 0 2px 0 #fff, 0 6px 16px rgba(255, 79, 136, 0.25);
+  --page-bg:
+    radial-gradient(circle at 20% 15%, rgba(255, 209, 102, 0.35), transparent 40%),
+    radial-gradient(circle at 80% 25%, rgba(126, 217, 255, 0.30), transparent 45%),
+    linear-gradient(160deg, #ffe3ef 0%, #fff7fb 45%, #e8f6ff 100%);
+  --toggle-bg: rgba(255, 255, 255, 0.6);
+  --toggle-fg: #5a2a44;
+  --toggle-border: rgba(0, 0, 0, 0.15);
 }
 
 html,
@@ -29,11 +72,64 @@ body {
   min-height: 100vh;
   font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 20% 15%, rgba(255, 209, 102, 0.35), transparent 40%),
-    radial-gradient(circle at 80% 25%, rgba(126, 217, 255, 0.30), transparent 45%),
-    linear-gradient(160deg, #ffe3ef 0%, #fff7fb 45%, #e8f6ff 100%);
+  background: var(--page-bg);
   background-attachment: fixed;
+  transition: color 0.3s ease;
+}
+
+/* Faint starfield / bokeh dots over the dark base (hidden in light). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(1.5px 1.5px at 70% 60%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 40% 80%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 85% 20%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 55% 15%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 10% 70%, rgba(255, 255, 255, 0.45), transparent);
+  background-repeat: repeat;
+  background-size: 320px 320px;
+  opacity: 0.6;
+}
+body.light::before {
+  opacity: 0;
+}
+
+/* ============================================================
+   THEME TOGGLE — small, fixed, top-right, never over the cake
+   ============================================================ */
+.theme-toggle {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10000;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--toggle-border);
+  border-radius: 50%;
+  background: var(--toggle-bg);
+  color: var(--toggle-fg);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  display: grid;
+  place-items: center;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+.theme-toggle:hover {
+  transform: scale(1.08);
+}
+.theme-toggle:focus-visible {
+  outline: 3px solid #a06bff;
+  outline-offset: 3px;
 }
 
 /* ============================================================
@@ -54,17 +150,25 @@ body {
   flex-direction: column;
   align-items: center;
   margin-bottom: clamp(1.5rem, 5vw, 3rem);
+  --frost: #fff3fb; /* light frosting color shared by every tier */
 }
 
-/* Each tier drops from above the viewport and bounces into place.
-   The overshoot cubic-bezier gives the "settle" bounce. */
+/* Each tier drops from above the viewport, squashes on impact and
+   springs back. transform-origin at the bottom so the squash reads
+   as "weight landing on the tier below". */
 .tier {
-  border-radius: 12px 12px 6px 6px;
+  position: relative;
+  border-radius: 14px 14px 8px 8px;
   opacity: 0; /* hidden until .playing triggers the animation */
-  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.08), 0 6px 14px rgba(0, 0, 0, 0.15);
+  transform-origin: bottom center;
+  box-shadow:
+    inset 0 -8px 0 rgba(0, 0, 0, 0.10),
+    inset 0 5px 7px rgba(255, 255, 255, 0.35),
+    0 8px 16px rgba(0, 0, 0, 0.18);
 }
 
 .tier-top {
+  position: relative; /* anchor the absolute .candles to the top tier */
   width: clamp(80px, 22vw, 130px);
   height: clamp(34px, 9vw, 54px);
   background: linear-gradient(180deg, #ffd9ec, #ff9ec9);
@@ -87,25 +191,109 @@ body {
   z-index: 1;
 }
 
+/* Frosting cap: a lighter band across the top of each tier with a
+   scalloped, drippy bottom edge built from overlapping radial blobs.
+   Painted behind the sprinkles but above the cake body gradient. */
+.tier::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 10% 36%, var(--frost) 0 8px, transparent 9px),
+    radial-gradient(circle at 28% 41%, var(--frost) 0 6px, transparent 7px),
+    radial-gradient(circle at 46% 38%, var(--frost) 0 9px, transparent 10px),
+    radial-gradient(circle at 64% 42%, var(--frost) 0 6px, transparent 7px),
+    radial-gradient(circle at 82% 37%, var(--frost) 0 8px, transparent 9px),
+    radial-gradient(circle at 94% 40%, var(--frost) 0 5px, transparent 6px),
+    linear-gradient(180deg, var(--frost) 0 32%, rgba(255, 255, 255, 0) 40%);
+}
+
+/* Sprinkles: scattered colored dots over the cake via layered
+   radial-gradient "pixels". Sits above the frosting. */
+.tier::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.9;
+  background-image:
+    radial-gradient(circle, #ffd166 0 2.2px, transparent 3px),
+    radial-gradient(circle, #7ed9ff 0 2.2px, transparent 3px),
+    radial-gradient(circle, #ff4f88 0 2.2px, transparent 3px),
+    radial-gradient(circle, #a06bff 0 2px, transparent 2.8px);
+  background-size: 46px 38px, 58px 50px, 70px 44px, 52px 60px;
+  background-position: 8px 12px, 26px 26px, 44px 8px, 14px 32px;
+}
+
+/* Cherry on top of the top tier, with a small stem. */
+.cherry {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 15px;
+  height: 15px;
+  z-index: 6;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffb3d1, #e11d48 72%);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+}
+.cherry::before {
+  content: "";
+  position: absolute;
+  bottom: 78%;
+  left: 58%;
+  width: 2px;
+  height: 9px;
+  background: #3a8a3a;
+  border-radius: 2px;
+  transform: rotate(18deg);
+  transform-origin: bottom center;
+}
+
 .plate {
+  position: relative;
   width: clamp(190px, 52vw, 300px);
   height: clamp(14px, 4vw, 20px);
   margin-top: -2px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #ffffff, #e7e7ef);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  background: linear-gradient(180deg, #ffffff, #ededf5);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.28),
+    0 0 0 4px rgba(255, 255, 255, 0.6),  /* rim */
+    inset 0 3px 6px rgba(255, 255, 255, 0.9),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.12);
   opacity: 0;
 }
+.plate::after {
+  content: "";
+  position: absolute;
+  top: 16%;
+  left: 14%;
+  right: 14%;
+  height: 36%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.85), transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
 
-/* Candles sit on the top tier */
+/* Candles sit on the top tier and fall WITH it (children of .tier-top),
+   so they inherit the tier's squash & settle. Only the flame lights up. */
 .candles {
   position: absolute;
   top: -34px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
   display: flex;
+  justify-content: center;
   gap: clamp(8px, 3vw, 18px);
-  opacity: 0;
+  z-index: 5;
+  opacity: 1;
 }
 
 .candle {
@@ -122,17 +310,23 @@ body {
   );
 }
 
+/* Flame starts unlit (small + transparent) and LIGHTS UP after the
+   candles finish dropping (~2.0s), via body.playing .flame below.
+   The strong box-shadow is the "lit" glow on the dark base. */
 .flame {
   position: absolute;
   top: -14px;
   left: 50%;
   width: 10px;
   height: 16px;
-  transform: translateX(-50%);
+  opacity: 0;
+  transform: translateX(-50%) scale(0.4);
   border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
   background: radial-gradient(circle at 50% 70%, #fff3b0, #ff9f1c 60%, #ff5400);
   filter: drop-shadow(0 0 6px rgba(255, 159, 28, 0.8));
-  animation: flicker 0.9s infinite alternate ease-in-out;
+  box-shadow:
+    0 0 12px 3px rgba(255, 159, 28, 0.6),
+    0 0 26px 8px rgba(255, 79, 136, 0.35);
 }
 
 /* Headline fades + scales in AFTER the cake settles */
@@ -141,43 +335,94 @@ body {
   line-height: 1.15;
   margin: 0;
   padding: 0 0.5rem;
-  color: var(--pink-deep);
-  text-shadow: 0 2px 0 #fff, 0 6px 16px rgba(255, 79, 136, 0.25);
+  color: var(--headline-color);
+  text-shadow: var(--headline-shadow);
   opacity: 0;
   transform: scale(0.6);
 }
 
 /* ---- animation states, toggled by adding .playing on <body> ---- */
-body.playing .tier-top {
-  animation: dropIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
-}
-body.playing .tier-mid {
-  animation: dropIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s both;
+/* Tiers fall bottom-first like a real cake is built: plate, then bottom,
+   mid, top. Each lands with a squash & settle; the tier it lands ON gets
+   a short secondary "weight" squash a beat later (the .tierReact delay
+   matches the upper tier's landing time). */
+body.playing .plate {
+  animation:
+    tierDrop 0.9s cubic-bezier(0.5, 0, 1, 1) 0.1s both,
+    tierReact 0.5s ease-out 1.08s forwards;
 }
 body.playing .tier-bottom {
-  animation: dropIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;
+  animation:
+    tierDrop 0.9s cubic-bezier(0.5, 0, 1, 1) 0.45s both,
+    tierReact 0.5s ease-out 1.43s forwards;
 }
-body.playing .plate {
-  animation: dropIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.82s both;
+body.playing .tier-mid {
+  animation:
+    tierDrop 0.9s cubic-bezier(0.5, 0, 1, 1) 0.8s both,
+    tierReact 0.5s ease-out 1.78s forwards;
 }
-body.playing .candles {
-  animation: dropIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 1.0s both;
+body.playing .tier-top {
+  animation: tierDrop 0.9s cubic-bezier(0.5, 0, 1, 1) 1.15s both;
 }
 body.playing .headline {
-  animation: headlineIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 1.55s both;
+  animation: headlineIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 2.0s both;
 }
 
-@keyframes dropIn {
+/* Flames light up once the candles land (~2.0s), then flicker forever. */
+body.playing .flame {
+  animation:
+    lightUp 0.6s ease-out 2.0s both,
+    flicker 0.9s infinite alternate ease-in-out 2.6s;
+}
+
+/* Gentle, alive glow around the whole assembled cake on the dark base. */
+body.playing .cake {
+  animation: cakeGlow 3.2s ease-in-out 2.6s infinite;
+}
+
+/* One tier's full journey: gravity fall (slight rotation + stretch),
+   impact squash, elastic overshoot, damped settle to rest. */
+@keyframes tierDrop {
   0% {
-    transform: translateY(-120vh);
+    transform: translateY(-130vh) rotate(-7deg) scaleY(1) scaleX(1);
     opacity: 0;
   }
-  60% {
+  12% {
     opacity: 1;
   }
+  55% {
+    transform: translateY(-50vh) rotate(5deg) scaleY(1.07) scaleX(0.95);
+  }
+  70% {
+    /* stretched just before impact */
+    transform: translateY(-2vh) rotate(-2.5deg) scaleY(1.1) scaleX(0.91);
+  }
+  80% {
+    /* IMPACT: squash down onto the tier below */
+    transform: translateY(0) rotate(1deg) scaleY(0.8) scaleX(1.15);
+  }
+  88% {
+    /* elastic overshoot */
+    transform: translateY(0) rotate(-0.6deg) scaleY(1.07) scaleX(0.97);
+  }
+  94% {
+    transform: translateY(0) rotate(0.3deg) scaleY(0.98) scaleX(1.02);
+  }
   100% {
-    transform: translateY(0);
-    opacity: 1;
+    transform: translateY(0) rotate(0) scaleY(1) scaleX(1);
+  }
+}
+
+/* Short secondary squash for the tier BELOW when weight lands on it. */
+@keyframes tierReact {
+  0% {
+    transform: translateY(0) scaleY(1) scaleX(1);
+  }
+  45% {
+    transform: translateY(0) scaleY(0.92) scaleX(1.05);
+  }
+  100% {
+    transform: translateY(0) scaleY(1) scaleX(1);
   }
 }
 
@@ -192,12 +437,73 @@ body.playing .headline {
   }
 }
 
+/* Flame grows in from nothing -> clearly LIT. */
+@keyframes lightUp {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.2);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
 @keyframes flicker {
   0% {
     transform: translateX(-50%) scale(1) rotate(-2deg);
   }
   100% {
     transform: translateX(-50%) scale(1.15) rotate(2deg);
+  }
+}
+
+/* Soft colored glow that breathes around the cake. */
+@keyframes cakeGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 18px rgba(255, 79, 136, 0.30));
+  }
+  50% {
+    filter: drop-shadow(0 0 34px rgba(160, 107, 255, 0.45));
+  }
+}
+
+/* ============================================================
+   CONFETTI — lightweight DOM pieces, spawned by main.js
+   ============================================================ */
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  overflow: hidden;
+}
+.confetti-piece {
+  position: absolute;
+  top: -14px;
+  border-radius: 2px;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: confettiFall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes confettiFall {
+  0% {
+    transform: translate(0, -10vh) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--drift, 0px), 110vh) rotate(720deg);
+    opacity: 1;
   }
 }
 
@@ -249,86 +555,95 @@ body.playing .headline {
   box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.8);
 }
 
-/* Perspective container so cards can travel in Z space */
-.photo-grid {
+/* Photo-strip printer: a connected vintage film strip that feeds
+   DOWN out of the machine slot, one frame at a time, looping. */
+.printer-window {
   width: 100%;
-  max-width: 1100px;
+  max-width: clamp(280px, 82vw, 380px);
+  height: clamp(460px, 70vh, 660px);
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(clamp(150px, 42vw, 220px), 1fr));
-  gap: clamp(0.8rem, 3vw, 1.5rem);
-  perspective: 1200px;
+  overflow: hidden;
+  position: relative;
+  border-top: 14px solid #120a18;
+  border-radius: 0 0 14px 14px;
+  background: linear-gradient(180deg, #1c0f24, #2c1833);
+  box-shadow: inset 0 8px 18px rgba(0, 0, 0, 0.6);
 }
 
-.photo-card {
+/* The slot lip at the very top, where the strip emerges from. */
+.printer-window::before {
+  content: "";
+  position: absolute; top: -3px; left: 12%; right: 12%; height: 6px;
+  background: #000; border-radius: 4px; z-index: 5;
+}
+
+.strip {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  animation: feedStrip 72s linear infinite;
+  will-change: transform;
+}
+
+/* Duplicated set (done in JS) + translateY(-50%) -> 0 = a seamless
+   infinite loop that never freezes on the last photo. */
+@keyframes feedStrip {
+  from { transform: translateY(-50%); }
+  to   { transform: translateY(0); }
+}
+
+.frame {
+  margin: 0;
   background: var(--cream);
-  padding: 10px 10px 0;
-  border-radius: 4px;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
-  transform-style: preserve-3d;
-  /* initial far/small state before printing */
-  opacity: 0;
+  border-bottom: 6px solid #fff;
+  padding: 8px 8px 0;
 }
 
-.photo-card.show {
-  animation: printPhoto 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+.frame img {
+  display: block; width: 100%;
+  height: auto;
+  max-height: clamp(360px, 58vh, 560px);
+  object-fit: contain;
+  border-radius: 2px; background: #eee;
 }
 
-.photo-card img {
-  display: block;
-  width: 100%;
-  height: clamp(150px, 40vw, 220px);
-  object-fit: cover;
-  border-radius: 2px;
-  background: #eee;
-}
-
-.photo-card .caption {
-  margin: 8px 4px 12px;
-  font-size: clamp(0.8rem, 3.2vw, 0.95rem);
-  text-align: center;
-  color: var(--ink);
-  font-family: "Comic Sans MS", "Trebuchet MS", cursive, sans-serif;
-  line-height: 1.25;
-  word-break: break-word;
-}
-
-@keyframes printPhoto {
-  0% {
-    opacity: 0;
-    transform: translateZ(-500px) scale(0.4);
-  }
-  100% {
-    opacity: 1;
-    transform: translateZ(0) scale(1);
-  }
+.frame .caption {
+  margin: 6px 2px 10px;
+  font-size: clamp(0.72rem, 2.6vw, 0.9rem);
+  text-align: center; color: var(--ink);
+  font-family: "Comic Sans MS","Trebuchet MS",cursive,sans-serif;
+  line-height: 1.2; word-break: break-word;
 }
 
 /* ============================================================
    RESPONSIVE — phone portrait (~375px) and up
-   ============================================================ */
+    ============================================================ */
 @media (max-width: 480px) {
   .entrance {
     padding-top: 2.5rem;
   }
-  .photo-grid {
-    grid-template-columns: 1fr;
-    gap: 1.1rem;
-  }
-  .photo-card img {
-    height: 60vw;
-  }
 }
 
-/* Respect users who prefer less motion: show final state instantly */
+/* Respect users who prefer less motion: show final state instantly.
+   Candles stay LIT (static glow, no flicker), cake assembled, headline
+   visible. Confetti is hidden entirely. Never hide content. */
 @media (prefers-reduced-motion: reduce) {
   .tier,
   .plate,
   .candles,
   .headline,
-  .photo-card {
+  .strip,
+  .cake {
     opacity: 1 !important;
     transform: none !important;
     animation: none !important;
+  }
+  .flame {
+    opacity: 1 !important;
+    transform: translateX(-50%) scale(1) !important;
+    animation: none !important;
+  }
+  .confetti-layer {
+    display: none !important;
   }
 }
