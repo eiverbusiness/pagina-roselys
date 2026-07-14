@@ -427,6 +427,7 @@ body.playing .cake {
   }
   100% {
     transform: translateY(0) rotate(0) scaleY(1) scaleX(1);
+    opacity: 1;
   }
 }
 
