@@ -145,9 +145,9 @@ body.light::before {
   position: sticky; /* pin at top so it stays visible while the booth scrolls behind */
   top: 0.5rem;
   z-index: 20;
-  background: rgba(15, 8, 24, 0.45);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: linear-gradient(160deg, #1c1130, #120b1f);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   border-radius: 16px;
   padding: 0.4rem 0.9rem;
   display: flex;
