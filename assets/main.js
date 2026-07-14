@@ -108,7 +108,7 @@
     document.body.appendChild(layer);
 
     var colors = ["#ff4f88", "#a06bff", "#4fd8ff", "#ffd166", "#ff7eb3", "#ffffff"];
-    var count = 90;
+      var count = (window.innerWidth < 480) ? 40 : 90;
     for (var i = 0; i < count; i++) {
       var piece = document.createElement("span");
       piece.className = "confetti-piece";

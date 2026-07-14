@@ -655,6 +655,20 @@ body.playing .cake {
   .entrance {
     padding-top: 2.5rem;
   }
+  /* Mobile perf: skip the infinite filter repaints (drop-shadow +
+     brightness animations force per-frame repaints on weak GPUs). */
+  body.playing .cake {
+    animation: none;
+    filter: drop-shadow(0 0 22px rgba(255, 79, 136, 0.35));
+  }
+  .tier::before {
+    animation: none;
+  }
+  /* Bigger, readable photo captions on small screens. */
+  .frame .caption {
+    font-size: clamp(1rem, 4.5vw, 1.2rem);
+    line-height: 1.3;
+  }
 }
 
 /* Respect users who prefer less motion: show final state instantly.
