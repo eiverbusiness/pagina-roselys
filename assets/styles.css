@@ -145,7 +145,14 @@ body.light::before {
 }
 
 .cake {
-  position: relative;
+  position: sticky; /* pin at top so it stays visible while the booth scrolls behind */
+  top: 0.5rem;
+  z-index: 20;
+  background: rgba(15, 8, 24, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 0.4rem 0.9rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -209,6 +216,19 @@ body.light::before {
     radial-gradient(circle at 82% 37%, var(--frost) 0 8px, transparent 9px),
     radial-gradient(circle at 94% 40%, var(--frost) 0 5px, transparent 6px),
     linear-gradient(180deg, var(--frost) 0 32%, rgba(255, 255, 255, 0) 40%);
+  /* Gentle, slow sheen so the frosting feels alive ("goteando"). */
+  animation: frostingShimmer 6s ease-in-out infinite;
+}
+
+/* Very subtle, slow brightness breathing on the frosting cap. */
+@keyframes frostingShimmer {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.12);
+  }
 }
 
 /* Sprinkles: scattered colored dots over the cake via layered
@@ -511,6 +531,9 @@ body.playing .cake {
    PHOTO BOOTH — vintage polaroid printer
    ============================================================ */
 .booth {
+  width: 100%;
+  align-self: stretch; /* span the entrance column so the machine stays centered */
+  margin-top: clamp(1.5rem, 5vw, 3rem); /* breathing room below the sticky cake */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -629,6 +652,7 @@ body.playing .cake {
    visible. Confetti is hidden entirely. Never hide content. */
 @media (prefers-reduced-motion: reduce) {
   .tier,
+  .tier::before,
   .plate,
   .candles,
   .headline,
